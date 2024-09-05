@@ -1,6 +1,5 @@
 import streamlit as st
-import openai
-from openai.error import OpenAIError
+from Lab1 import validate_api_key, generate_response
 
 # Show title and description.
 st.title("📄 My Document Question Answering - Lab 1")
@@ -12,20 +11,6 @@ st.write(
 # Initialize session state for API key validation
 if 'api_key_valid' not in st.session_state:
     st.session_state.api_key_valid = False
-
-# Function to validate the API key
-def validate_api_key(api_key):
-    try:
-        # Set the OpenAI API key
-        openai.api_key = api_key
-        # Test the API key with a basic request
-        openai.ChatCompletion.create(
-            model="gpt-4.0-mini", messages=[{"role": "system", "content": "Hello"}]
-        )
-        return True
-    except OpenAIError as e:
-        st.error(f"Error validating API key: {e}")
-        return False
 
 # Fetch the API key from Streamlit secrets
 openai_api_key = st.secrets["somesection"]  # Ensure this is set in .streamlit/secrets.toml
@@ -58,21 +43,7 @@ if st.session_state.api_key_valid:
     if uploaded_file and question:
         # Process the uploaded file and question
         document = uploaded_file.read().decode("utf-8")
-        messages = [
-            {
-                "role": "user",
-                "content": f"Here's a document: {document} \n\n---\n\n {question}",
-            }
-        ]
-
-        # Generate an answer using the OpenAI API
-        try:
-            response = openai.ChatCompletion.create(
-                model="gpt-4.0-mini",
-                messages=messages
-            )
-            st.write(response.choices[0].message['content'])
-        except OpenAIError as e:
-            st.error(f"An error occurred while generating the response: {e}")
+        response = generate_response(openai_api_key, document, question)
+        st.write(response)
 else:
     st.info("Please add your OpenAI API key to continue.", icon="🗝")
