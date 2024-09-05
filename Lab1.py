@@ -1,39 +1,33 @@
 import streamlit as st
-from Lab1 import validate_api_key, generate_response
+from openai import OpenAI
 
 # Show title and description.
-st.title("📄 My Document Question Answering - Lab 1")
+st.title("LAB-01-Disha Negi📄 Document question answering")
 st.write(
     "Upload a document below and ask a question about it – GPT will answer! "
-    "To use this app, you need to provide an OpenAI API key, which you can get [here](https://platform.openai.com/account/api-keys)."
+    "To use this app, you need to provide an OpenAI API key, which you can get [here](https://platform.openai.com/account/api-keys). "
 )
 
-# Initialize session state for API key validation
-if 'api_key_valid' not in st.session_state:
-    st.session_state.api_key_valid = False
+# Ask user for their OpenAI API key via st.text_input.
+# Alternatively, you can store the API key in ./.streamlit/secrets.toml and access it
+# via st.secrets, see https://docs.streamlit.io/develop/concepts/connections/secrets-management
 
-# Fetch the API key from Streamlit secrets
-openai_api_key = st.secrets["somesection"]  # Ensure this is set in .streamlit/secrets.toml
+# Fetch the OpenAI API key from Streamlit secrets.
+openai_api_key = st.secrets["somesection"]
 
-# Validate API key as soon as it is fetched
-if openai_api_key:
-    if validate_api_key(openai_api_key):
-        st.success("API key is valid!")
-        st.session_state.api_key_valid = True
-    else:
-        st.error("Invalid API key. Please check your OpenAI API key.")
-        st.session_state.api_key_valid = False
+if not openai_api_key:
+    st.info("Please add your OpenAI API key to continue.", icon="🗝")
 else:
-    st.error("API key not found in secrets!")
 
-# Create an OpenAI client if the API key is valid
-if st.session_state.api_key_valid:
-    # Let the user upload a file via st.file_uploader
+    # Create an OpenAI client.
+    client = OpenAI(api_key=openai_api_key)
+
+    # Let the user upload a file via st.file_uploader.
     uploaded_file = st.file_uploader(
         "Upload a document (.txt or .md)", type=("txt", "md")
     )
 
-    # Ask the user for a question via st.text_area
+    # Ask the user for a question via st.text_area.
     question = st.text_area(
         "Now ask a question about the document!",
         placeholder="Can you give me a short summary?",
@@ -41,9 +35,22 @@ if st.session_state.api_key_valid:
     )
 
     if uploaded_file and question:
-        # Process the uploaded file and question
-        document = uploaded_file.read().decode("utf-8")
-        response = generate_response(openai_api_key, document, question)
-        st.write(response)
-else:
-    st.info("Please add your OpenAI API key to continue.", icon="🗝")
+
+        # Process the uploaded file and question.
+        document = uploaded_file.read().decode()
+        messages = [
+            {
+                "role": "user",
+                "content": f"Here's a document: {document} \n\n---\n\n {question}",
+            }
+        ]
+
+        # Generate an answer using the OpenAI API.
+        stream = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=messages,
+            stream=True,
+        )
+
+        # Stream the response to the app using st.write_stream.
+        st.write_stream(stream)
