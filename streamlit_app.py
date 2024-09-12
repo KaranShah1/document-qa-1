@@ -25,7 +25,7 @@ elif selected_page == "Second Lab":
     # Execute the Lab2.py code
     exec(open("Lab2.py").read())  # This will run the content of Lab2.py
 
-elif selected_page == "Second Lab":
+elif selected_page == "Third Lab":
     st.title("Third Lab")
     # Execute the Lab3.py code
     exec(open("Lab3.py").read())  # This will run the content of Lab3.py
