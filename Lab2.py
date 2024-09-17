@@ -9,7 +9,7 @@ st.write(
 )
 
 # Fetch the OpenAI API key from Streamlit secrets.
-openai_api_key = st.secrets["somesection"]
+openai_api_key = st.secrets["openai"]
 
 if not openai_api_key:
     st.info("Please add your OpenAI API key to continue.", icon="🗝")
