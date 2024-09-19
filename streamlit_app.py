@@ -8,8 +8,8 @@ st.set_page_config(page_title="Multi-Page App", layout="wide")
 with st.sidebar:
     selected_page = option_menu(
         "Select Lab",
-        ["First Lab", "Second Lab", "Third Lab"],
-        icons=['book', 'beaker'],
+        ["First Lab", "Second Lab", "Third Lab", "Fourth Lab"],
+        icons=['book', 'book', 'book','book'],
         menu_icon="cast", 
         default_index=0,
     )
@@ -29,3 +29,8 @@ elif selected_page == "Third Lab":
     st.title("Third Lab")
     # Execute the Lab3.py code
     exec(open("Lab3.py").read())  # This will run the content of Lab3.py
+
+elif selected_page == "Fourth Lab":
+    st.title("Fourth Lab")
+    # Execute the Lab4.py code
+    exec(open("Lab4.py").read())  # This will run the content of Lab4.py
