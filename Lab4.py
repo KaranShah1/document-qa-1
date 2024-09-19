@@ -30,7 +30,7 @@ def add_to_collection(collection, text, filename):
         query_embeddings = [query_embedding],        
         m_results=3 # Number of closest document to return
         )
-#Chromadb Ends
+
 
 
 #print the results with ids using an index
@@ -41,11 +41,13 @@ for i in range(len(results['documents'][0])):
 
         #Adding embedding and document to chromadb
         collection.add(
-            documents=[text]
-            ids=[filename]
+            documents=[text],
+            ids=[filename],
             embedding=[embedding]
         )
 topic = st.sidebar.selectbox("Topic", ("Text Mining", "GenAI"))
+
+#Chromadb Ends
 
         
         
