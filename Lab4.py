@@ -1,6 +1,7 @@
 import streamlit as st
 from openai import OpenAI
 import tiktoken  # Tokenizer from OpenAI
+import chromadb
 
 # Set a maximum token limit for the buffer (you can adjust this based on your needs).
 max_tokens = 2048
