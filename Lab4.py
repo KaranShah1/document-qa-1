@@ -14,14 +14,30 @@ summary_threshold = 5  # Number of messages before we start summarizing
 chroma_client = chromadb.Client() #Initialize chromadb Client
 collection = client.create_collection("Lab4Collection") #  Create a ChromaDB collection named 'Lab4Collection'
 
+#Chromadb start
 def add_to_collection(collection, text, filename):
         #Crete an embedding
-        openai_client = st.session_state.openai_client(
+        openai_client = st.session_state.openai_client
+             response = openai_client.embeddings.create(   
             input=text,
             model="text-embedding-3-small")
         
         #Get the embedding
         embedding = response.data[0].embedding
+        query_embedding =[query_embedding],
+
+        results= collection.query(
+        query_embeddings = [query_embedding],        
+        m_results=3 # Number of closest document to return
+        )
+#Chromadb Ends
+
+
+#print the results with ids using an index
+for i in range(len(results['documents'][0])):
+        doc = results ['documents'] [0] [i]
+        doc_id = results['ids']  [0] [i]
+        st.write(f"The following file / syllabus might be helpful: {doc_id}") 
 
         #Adding embedding and document to chromadb
         collection.add(
@@ -29,6 +45,7 @@ def add_to_collection(collection, text, filename):
             ids=[filename]
             embedding=[embedding]
         )
+topic = st.sidebar.selectbox("Topic", ("Text Mining", "GenAI"))
 
         
         
