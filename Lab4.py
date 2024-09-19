@@ -6,6 +6,19 @@ import chromadb
 # Set a maximum token limit for the buffer (you can adjust this based on your needs).
 max_tokens = 2048
 summary_threshold = 5  # Number of messages before we start summarizing
+chroma_client = chromadb.Client() #Initialize chromadb Client
+collection = client.create_collection("Lab4Collection") #  Create a ChromaDB collection named 'Lab4Collection'
+
+def add_to_collection(collection, text, filename):
+        #Crete an embedding
+        
+        
+
+
+
+
+
+
 
 # # Function to generate Gemini response
 # def generate_gemini_response(client, messages):
@@ -103,6 +116,7 @@ st.title("Karan Shah 📄 Chatbot Interaction")
 st.write(
     "Interact with the chatbot! "
 )
+st.write("Interact with the chatbot and store data in ChromaDB!")
 
 # Fetch the OpenAI API key from Streamlit secrets
 openai_api_key = st.secrets["openai"]
