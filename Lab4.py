@@ -11,43 +11,100 @@ sys.modules ['sqlite'] = sys.modules.pop('pysqlite3')
 # Set a maximum token limit for the buffer (you can adjust this based on your needs).
 max_tokens = 2048
 summary_threshold = 5  # Number of messages before we start summarizing
-chroma_client = chromadb.Client() #Initialize chromadb Client
-collection = client.create_collection("Lab4Collection") #  Create a ChromaDB collection named 'Lab4Collection'
 
-#Chromadb start
-def add_to_collection(collection, text, filename):
-        #Crete an embedding
+
+
+
+import os
+import streamlit as st
+import openai
+import chromadb
+from PyPDF2 import PdfReader
+
+# Function to create the ChromaDB collection and add PDF text
+def create_lab4_vector_db():
+    if 'Lab4_vectorDB' not in st.session_state:
+        # Initialize OpenAI client
+        openai.api_key = st.secrets["openai_api_key"]  # Update with your OpenAI key
+        openai_client = openai
+
+        # Initialize ChromaDB client
+        chromadb_client = chromadb.Client()
+
+        # Create the collection
+        collection = chromadb_client.create_collection(name="Lab4Collection")
+
+        # PDF directory
+        pdf_dir = "/Users/tanurana/Desktop/hw_files"
+
+        # Loop through the PDF files and add embeddings to ChromaDB
+        for filename in os.listdir(pdf_dir):
+            if filename.endswith(".pdf"):
+                filepath = os.path.join(pdf_dir, filename)
+                with open(filepath, "rb") as file:
+                    pdf_reader = PdfReader(file)
+                    text = ''.join([page.extract_text() or '' for page in pdf_reader.pages])
+
+                # Generate embedding from text using OpenAI embeddings
+                response = openai_client.embeddings.create(
+                    input=text,
+                    model="text-embedding-ada-002"  # or "text-embedding-ada-003"
+                )
+                embedding = response['data'][0]['embedding']
+
+                # Add text and embedding to ChromaDB collection
+                collection.add(
+                    documents=[text], 
+                    ids=[filename], 
+                    embeddings=[embedding]
+                )
+
+        # Save collection to session state to prevent re-creation
+        st.session_state.Lab4_vectorDB = collection
+        st.session_state.openai_client = openai_client
+        st.success("ChromaDB collection 'Lab4Collection' created and populated!")
+
+# Function to query the vectorDB
+def query_lab4_vector_db(query):
+    if 'Lab4_vectorDB' in st.session_state:
+        collection = st.session_state.Lab4_vectorDB
         openai_client = st.session_state.openai_client
-             response = openai_client.embeddings.create(   
-            input=text,
-            model="text-embedding-3-small")
-        
-        #Get the embedding
-        embedding = response.data[0].embedding
-        query_embedding =[query_embedding],
 
-        results= collection.query(
-        query_embeddings = [query_embedding],        
-        m_results=3 # Number of closest document to return
+        # Get embedding for the query
+        response = openai_client.embeddings.create(
+            input=query,
+            model="text-embedding-ada-002"
+        )
+        query_embedding = response['data'][0]['embedding']
+
+        # Query the collection using the embedding
+        results = collection.query(
+            query_embeddings=[query_embedding],
+            n_results=3
         )
 
+        # Print the results
+        for i in range(len(results['documents'][0])):
+            doc = results['documents'][0][i]
+            doc_id = results['ids'][0][i]
+            st.write(f"The following file might be helpful: {doc_id}")
+    else:
+        st.warning("Please create the vectorDB first!")
 
+# Main execution
+st.title("Lab 4 - ChromaDB Vector Search")
 
-#print the results with ids using an index
-for i in range(len(results['documents'][0])):
-        doc = results ['documents'] [0] [i]
-        doc_id = results['ids']  [0] [i]
-        st.write(f"The following file / syllabus might be helpful: {doc_id}") 
+# Sidebar to select topic for query
+topic = st.sidebar.selectbox("Topic", ("Text Mining", "Generative AI", "Data Science Overview"))
 
-        #Adding embedding and document to chromadb
-        collection.add(
-            documents=[text],
-            ids=[filename],
-            embedding=[embedding]
-        )
-topic = st.sidebar.selectbox("Topic", ("Text Mining", "GenAI"))
+# Button to create the vector database
+if st.button("Create ChromaDB Collection"):
+    create_lab4_vector_db()
 
-#Chromadb Ends
+# Button to query the database
+if st.button("Search in Vector DB"):
+    query_lab4_vector_db(topic)
+
 
         
         
