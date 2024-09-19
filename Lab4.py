@@ -2,6 +2,11 @@ import streamlit as st
 from openai import OpenAI
 import tiktoken  # Tokenizer from OpenAI
 import chromadb
+from PyPDF2 import PdfReader
+
+_import_('pysqlite3')
+import sys
+sys.modules ['sqlite'] = sys.modules.pop('pysqlite3')
 
 # Set a maximum token limit for the buffer (you can adjust this based on your needs).
 max_tokens = 2048
@@ -11,6 +16,20 @@ collection = client.create_collection("Lab4Collection") #  Create a ChromaDB col
 
 def add_to_collection(collection, text, filename):
         #Crete an embedding
+        openai_client = st.session_state.openai_client(
+            input=text,
+            model="text-embedding-3-small")
+        
+        #Get the embedding
+        embedding = response.data[0].embedding
+
+        #Adding embedding and document to chromadb
+        collection.add(
+            documents=[text]
+            ids=[filename]
+            embedding=[embedding]
+        )
+
         
         
 
