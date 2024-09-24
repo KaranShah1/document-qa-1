@@ -8,5 +8,3 @@ cohere
 python-dotenv
 bs4
 tiktoken
-chromadb
-protobuf==3.20
