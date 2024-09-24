@@ -117,7 +117,7 @@ def generate_conversation_summary(client, messages, llm_provider):
         msgs = []
         for msg in messages:
             role = "user" if msg["role"] == "user" else "model"
-            msgs.append({"role": role, "parts": [{"text": msg["content"]}]}])
+            msgs.append({"role": role, "parts": [{"text": msg["content"]}]})
         prompt = {"role": "user", "parts": [{"text": "Summarize the key points of this conversation concisely:"}]}
         response = client.generate_content(
             contents=[prompt, *msgs],
