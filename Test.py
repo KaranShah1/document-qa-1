@@ -117,7 +117,7 @@ def generate_conversation_summary(client, messages, llm_provider):
         msgs = []
         for msg in messages:
             role = "user" if msg["role"] == "user" else "model"
-            msgs.append({"role": role, "parts": [{"text": msg["content"]}]})
+            msgs.append({"role": role, "parts": [{"text": msg["content"]}]}])
         prompt = {"role": "user", "parts": [{"text": "Summarize the key points of this conversation concisely:"}]}
         response = client.generate_content(
             contents=[prompt, *msgs],
@@ -217,40 +217,4 @@ combined_document = "\n\n".join(documents)
 
 # Display chat history
 for message in st.session_state.messages:
-    role = "user" if message["role"] == "user" else "system"
-    with st.chat_message(role):
-        content = message.get("content") or message.get("parts", [{}])[0].get("text", "")
-        st.markdown(content)
-
-# User input
-if prompt := st.chat_input("Ask something..."):
-    st.session_state.messages.append({"role": "user", "content": prompt})
-    
-    with st.chat_message("user"):
-        st.markdown(prompt)
-
-    # Manage conversation memory based on selection
-    if memory_type == "Buffer of 5 questions":
-        if len(st.session_state.messages) > 5:
-            st.session_state.messages = st.session_state.messages[-5:]
-    elif memory_type == "Buffer of 5,000 tokens":
-        st.session_state.messages = truncate_messages_by_tokens(st.session_state.messages, 5000)
-    else:  # Conversation summary
-        summary = generate_conversation_summary(client, st.session_state.messages, llm_provider)
-        st.session_state.messages = [{"role": "system", "content": summary}]
-
-    # Generate the response based on selected LLM provider
-    if "OpenAI" in llm_provider:
-        response = generate_openai_response(client, st.session_state.messages, model)
-    elif llm_provider == "Cohere":
-        response = generate_cohere_response(client, st.session_state.messages)
-    else:  # Gemini
-        response = generate_gemini_response(client, st.session_state.messages, prompt)
-
-    if response:
-        with st.chat_message("system"):
-            full_response = ""
-            for chunk in response:
-                full_response += chunk.text or chunk.message['content']  # Streaming content
-                st.markdown(full_response)  # Display response to the user
-
+    role = "user
