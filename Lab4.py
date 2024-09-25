@@ -1,14 +1,14 @@
-import sys
 import streamlit as st
 from openai import OpenAI
 from PyPDF2 import PdfReader
 import os
-import chromadb
+
 # Workaround for sqlite3 issue in Streamlit Cloud
 _import_('pysqlite3')
+import sys
 sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
 
-
+import chromadb
 
 
 # Function to ensure the OpenAI client is initialized
