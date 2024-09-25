@@ -11,3 +11,4 @@ tiktoken
 chromadb
 PyPDF2
 pysqlite3
+protobuf==3.20
