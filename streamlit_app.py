@@ -34,8 +34,3 @@ elif selected_page == "Fourth Lab":
     st.title("Fourth Lab")
     # Execute the Lab4.py code
     exec(open("Lab4.py").read())  # This will run the content of Lab4.py
-
-elif selected_page == "Test":
-    st.title("Test")
-    # Execute the Test.py code
-    exec(open("Test.py").read())  # This will run the content of Test.py
