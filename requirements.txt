@@ -10,3 +10,4 @@ bs4
 tiktoken
 chromadb
 PyPDF2
+pysqlite3
