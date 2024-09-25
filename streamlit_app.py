@@ -8,7 +8,7 @@ st.set_page_config(page_title="Multi-Page App", layout="wide")
 with st.sidebar:
     selected_page = option_menu(
         "Select Lab",
-        ["First Lab", "Second Lab", "Third Lab", "Fourth Lab", "Test"],
+        ["First Lab", "Second Lab", "Third Lab", "Fourth Lab"],
         icons=['book', 'book', 'book','book'],
         menu_icon="cast", 
         default_index=0,
