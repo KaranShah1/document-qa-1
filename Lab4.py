@@ -5,7 +5,7 @@ from PyPDF2 import PdfReader
 import os
 
 # Workaround for sqlite3 issue in Streamlit Cloud
-import pysqlite3
+_import_('pysqlite3')
 sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
 
 
