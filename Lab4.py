@@ -1,7 +1,8 @@
 import streamlit as st
 from openai import OpenAI
-from PyPDF2 import PdfReader
 import os
+from PyPDF2 import PdfReader
+
 
 # Workaround for sqlite3 issue in Streamlit Cloud
 _import_('pysqlite3')
