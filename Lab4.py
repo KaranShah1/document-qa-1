@@ -1,194 +1,85 @@
-import sys
-import streamlit as st
-from openai import OpenAI
-from PyPDF2 import PdfReader
+import requests
+import zipfile
+import io
 import os
-
-# Workaround for sqlite3 issue in Streamlit Cloud
-import pysqlite3
-sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
-
-
+from bs4 import BeautifulSoup
+import openai
 import chromadb
+import time
+import streamlit as st
 
-# Function to ensure the OpenAI client is initialized
-def ensure_openai_client():
-    if 'openai_client' not in st.session_state:
-        # Get the API key from Streamlit secrets
-        api_key = st.secrets["openai"]
-        # Initialize the OpenAI client and store it in session state
-        st.session_state.openai_client = OpenAI(api_key=api_key)
+# Initialize ChromaDB client
+client = chromadb.Client()
+collection_name = "Lab4_Collections"
 
-# Function to create the ChromaDB collection
-def create_lab4_collection():
-    if 'Lab4_vectorDB' not in st.session_state:
-        # Set up the ChromaDB client
-        persist_directory = os.path.join(os.getcwd(), "chroma_db")
-        client = chromadb.PersistentClient(path=persist_directory)
-        collection = client.get_or_create_collection("Lab4Collection")
+# Delete collection if it exists
+try:
+    client.delete_collection(collection_name)
+except Exception as e:
+    print(f"Error deleting collection: {e}")
 
-        ensure_openai_client()
+# Create a new collection
+collection = client.create_collection(name=collection_name)
 
-        # Define the directory containing the PDF files
-        pdf_dir = os.path.join(os.getcwd(), "Lab-04-DataFiles")
-        if not os.path.exists(pdf_dir):
-            st.error(f"Directory not found: {pdf_dir}")
-            return None
+# Function to download and extract the GitHub repository
+def download_and_extract_github_repo():
+    url = 'https://github.com/KaranShah1/document-qa-1/archive/refs/heads/main.zip'
+    response = requests.get(url)
+    
+    if response.status_code == 200:
+        with zipfile.ZipFile(io.BytesIO(response.content)) as zip_ref:
+            zip_ref.extractall("Lab4_datafiles")
+        st.success("Repository successfully downloaded and extracted!")
+    else:
+        st.error("Failed to download the repository.")
 
-        # Process each PDF file in the directory
-        for filename in os.listdir(pdf_dir):
-            if filename.endswith(".pdf"):
-                filepath = os.path.join(pdf_dir, filename)
-                try:
-                    # Extract text from the PDF
-                    with open(filepath, "rb") as file:
-                        pdf_reader = PdfReader(file)
-                        text = ''.join([page.extract_text() or '' for page in pdf_reader.pages])
+# Function to read HTML files and convert them to text
+def read_html_to_text(html_path):
+    with open(html_path, 'r', encoding='utf-8') as file:
+        soup = BeautifulSoup(file, 'html.parser')
+        return soup.get_text()
 
-                    # Generate embeddings for the extracted text
-                    response = st.session_state.openai_client.embeddings.create(
-                        input=text, model="text-embedding-3-small"
-                    )
-                    embedding = response.data[0].embedding
+# Function to add new HTML files to the vector database
+def add_new_html_to_vector_db(new_html_folder_path):
+    for html_filename in os.listdir(new_html_folder_path):
+        if html_filename.endswith(".html"):
+            html_path = os.path.join(new_html_folder_path, html_filename)
+            st.write(f"Processing new file: {html_filename}")
 
-                    # Add the document to ChromaDB
-                    collection.add(
-                        documents=[text],
-                        metadatas=[{"filename": filename}],
-                        ids=[filename],
-                        embeddings=[embedding]
-                    )
-                except Exception as e:
-                    st.error(f"Error processing {filename}: {str(e)}")
+            # Extract text from the new HTML file
+            document_text = read_html_to_text(html_path)
 
-        # Store the collection in session state
-        st.session_state.Lab4_vectorDB = collection
+            # Set the OpenAI API key
+            openai_api_key = st.secrets.get("openai")
+            openai.api_key = openai_api_key
 
-    return st.session_state.Lab4_vectorDB
+            # Generate embeddings
+            embedding_response = openai.Embedding.create(
+                input=document_text,
+                model="text-embedding-ada-002"  # Updated model
+            )
+            embedding_vector = embedding_response['data'][0]['embedding']
 
-# Function to query the vector database
-def query_vector_db(collection, query):
-    ensure_openai_client()
-    try:
-        # Generate embedding for the query
-        response = st.session_state.openai_client.embeddings.create(
-            input=query, model="text-embedding-3-small"
-        )
-        query_embedding = response.data[0].embedding
+            # Add new document and embedding to ChromaDB collection
+            collection.add(
+                documents=[document_text],
+                embeddings=[embedding_vector],
+                metadatas=[{"filename": html_filename}],
+                ids=[html_filename]
+            )
+            st.write(f"Added {html_filename} to the vector database.")
+            time.sleep(20)
 
-        # Query the ChromaDB collection
-        results = collection.query(
-            query_embeddings=[query_embedding],
-            n_results=3
-        )
-        return results['documents'][0], [result['filename'] for result in results['metadatas'][0]]
-    except Exception as e:
-        st.error(f"Error querying the database: {str(e)}")
-        return [], []
+# Main function to manage the process
+def main():
+    # Download and extract GitHub repo
+    download_and_extract_github_repo()
 
-# Function to get chatbot response using OpenAI's GPT model
-def get_chatbot_response(query, context):
-    ensure_openai_client()
-    # Construct the prompt for the GPT model
-    prompt = f"""You are an AI assistant with knowledge from specific documents. Use the following context to answer the user's question. If the information is not in the context, say you don't know based on the available information.
+    # Process and add HTML files to vector database
+    new_html_folder_path = './Lab4_datafiles/document-qa-1-main/Lab4_datafiles/'  # Adjust the path after extraction
+    add_new_html_to_vector_db(new_html_folder_path)
 
-Context:
-{context}
-
-User Question: {query}
-
-Answer:"""
-
-    try:
-        # Generate streaming response using OpenAI's chat completion
-        response_stream = st.session_state.openai_client.chat.completions.create(
-            model="gpt-4o",  # Using the latest GPT-4 model
-            messages=[
-                {"role": "system", "content": "You are a helpful assistant."},
-                {"role": "user", "content": prompt}
-            ],
-            stream=True  # Enable streaming
-        )
-        return response_stream
-    except Exception as e:
-        st.error(f"Error getting chatbot response: {str(e)}")
-        return None
-
-# Initialize session state for chat history, system readiness, and collection
-if 'chat_history' not in st.session_state:
-    st.session_state.chat_history = []
-if 'system_ready' not in st.session_state:
-    st.session_state.system_ready = False
-if 'collection' not in st.session_state:
-    st.session_state.collection = None
-
-# Page content
-st.title("Lab 4 - Document Chatbot")
-
-# Check if the system is ready, if not, prepare it
-if not st.session_state.system_ready:
-    # Show a spinner while processing documents
-    with st.spinner("Processing documents and preparing the system..."):
-        st.session_state.collection = create_lab4_collection()
-        if st.session_state.collection:
-            # Set the system as ready and show a success message
-            st.session_state.system_ready = True
-            st.success("AI ChatBot is Ready!!!")
-        else:
-            st.error("Failed to create or load the document collection. Please check the file path and try again.")
-
-# Only show the chat interface if the system is ready
-if st.session_state.system_ready and st.session_state.collection:
-    st.subheader("Chat with the AI Assistant")
-
-    # Display chat history
-    for message in st.session_state.chat_history:
-        if isinstance(message, dict):
-            # New format (dictionary with 'role' and 'content' keys)
-            with st.chat_message(message["role"]):
-                st.markdown(message["content"])
-        elif isinstance(message, tuple):
-            # Old format (tuple with role and content)
-            role, content = message
-            # Convert 'You' to 'user', and assume any other role is 'assistant'
-            with st.chat_message("user" if role == "You" else "assistant"):
-                st.markdown(content)
-
-    # User input
-    user_input = st.chat_input("Ask a question about the documents:")
-
-    if user_input:
-        # Display user message
-        with st.chat_message("user"):
-            st.markdown(user_input)
-
-        # Query the vector database
-        relevant_texts, relevant_docs = query_vector_db(st.session_state.collection, user_input)
-        context = "\n".join(relevant_texts)
-
-        # Get streaming chatbot response
-        response_stream = get_chatbot_response(user_input, context)
-
-        # Display AI response
-        with st.chat_message("assistant"):
-            response_placeholder = st.empty()
-            full_response = ""
-            for chunk in response_stream:
-                if chunk.choices[0].delta.content is not None:
-                    full_response += chunk.choices[0].delta.content
-                    response_placeholder.markdown(full_response + "▌")
-            response_placeholder.markdown(full_response)
-
-        # Add to chat history (new format)
-        st.session_state.chat_history.append({"role": "user", "content": user_input})
-        st.session_state.chat_history.append({"role": "assistant", "content": full_response})
-
-        # Display relevant documents
-        with st.expander("Relevant documents used"):
-            for doc in relevant_docs:
-                st.write(f"- {doc}")
-
-elif not st.session_state.system_ready:
-    st.info("The system is still preparing. Please wait...")
-else:
-    st.error("Failed to create or load the document collection. Please check the file path and try again.")
+# Streamlit UI
+st.title("ChromaDB & OpenAI Embedding Processor")
+if st.button("Process Documents"):
+    main()
