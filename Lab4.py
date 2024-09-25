@@ -1,4 +1,4 @@
-port sys
+import sys
 import streamlit as st
 from openai import OpenAI
 from PyPDF2 import PdfReader
