@@ -14,7 +14,7 @@ import chromadb
 def ensure_openai_client():
     if 'openai_client' not in st.session_state:
         # Get the API key from Streamlit secrets
-        api_key = st.secrets["openai_api_key"]
+        api_key = st.secrets["openai]
         # Initialize the OpenAI client and store it in session state
         st.session_state.openai_client = OpenAI(api_key=api_key)
 
