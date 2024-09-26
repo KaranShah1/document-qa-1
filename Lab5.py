@@ -1,10 +1,12 @@
 import streamlit as st
-import openai
+from openai import OpenAI
 import requests
 
 # Set API Keys from Streamlit secrets
-openai.api_key = st.secrets["openai"]  # Accessing OpenAI API key from Streamlit secrets
+client = OpenAI(api_key=st.secrets["openai"])
+
 weather_api_key = st.secrets["weather"]  # Accessing OpenWeatherMap API key from Streamlit secrets
+
 
 def get_weather(location="Syracuse, NY"):
     """Fetch weather data from OpenWeatherMap."""
@@ -31,7 +33,7 @@ def get_clothing_suggestions(weather_info):
               f"The humidity is {weather_info['humidity']}%. "
               f"Based on this, what kind of clothing would you suggest for someone traveling today?")
 
-    response = openai.ChatCompletion.create(
+    response = client.chat.completions.create(
         model="gpt-3.5-turbo",  # Specify model as per new API
         messages=[
             {"role": "system", "content": "You are a helpful assistant that gives weather-based clothing advice in one line. Provide clothing suggestions and advice on whether it’s a good day for a picnic."},
