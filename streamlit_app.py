@@ -9,7 +9,7 @@ with st.sidebar:
     selected_page = option_menu(
         "Select Lab",
         ["First Lab", "Second Lab", "Third Lab", "Fourth Lab", "Fifth Lab"],
-        icons=['book', 'book', 'book','book'],
+        icons=['book', 'book', 'book','book', 'book'],
         menu_icon="cast", 
         default_index=0,
     )
