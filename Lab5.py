@@ -25,7 +25,7 @@ def get_weather(location="Syracuse, NY"):
         return {"error": "Could not retrieve weather data."}
 
 def llm_tool(location):
-    """Function to call OpenAI's API for clothing suggestions based on the weather."""
+    """Function to call OpenAI's API to get weather suggestion."""
     if not location:
         location = "Syracuse, NY"  # Default location
     
@@ -34,35 +34,18 @@ def llm_tool(location):
     if 'error' in weather_data:
         return f"Error: {weather_data['error']}"
     
-    # Prepare the weather details for the prompt
-    weather_info = (f"The current weather in {weather_data['location']}:\n"
-                    f"Temperature: {weather_data['temperature']}°C\n"
-                    f"Feels Like: {weather_data['feels_like']}°C\n"
-                    f"Min Temp: {weather_data['temp_min']}°C\n"
-                    f"Max Temp: {weather_data['temp_max']}°C\n"
-                    f"Humidity: {weather_data['humidity']}%\n"
-                    f"Conditions: {weather_data['weather']}")
-    
-    # Prepare the prompt for OpenAI
-    prompt = (f"Here is the weather information:\n"
-              f"{weather_info}\n\n"
-              f"Based on this weather, what are some appropriate clothing suggestions for today?")
-
-    # Call OpenAI to get the response
-    response = openai.Completion.create(
-        engine="text-davinci-003",  # Specify the model you want to use
-        prompt=prompt,
-        max_tokens=100  # Adjust this if needed
-    )
-    
-    clothing_suggestion = response.choices[0].text.strip()
-    
-    return f"{weather_info}\n\nClothing Suggestions: {clothing_suggestion}"
+    return (f"The current weather in {weather_data['location']}:\n"
+            f"Temperature: {weather_data['temperature']}°C\n"
+            f"Feels Like: {weather_data['feels_like']}°C\n"
+            f"Min Temp: {weather_data['temp_min']}°C\n"
+            f"Max Temp: {weather_data['temp_max']}°C\n"
+            f"Humidity: {weather_data['humidity']}%\n"
+            f"Conditions: {weather_data['weather']}")
 
 # Streamlit UI
-st.title("Weather-Based Clothing Suggestion Bot")
+st.title("Weather Suggestion Bot")
 user_input = st.text_input("Enter a city (leave blank for default - Syracuse, NY):")
 
-if st.button("Get Clothing Suggestion"):
+if st.button("Get Weather Suggestion"):
     suggestion = llm_tool(user_input)
     st.write(suggestion)
