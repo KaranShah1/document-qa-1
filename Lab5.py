@@ -24,8 +24,26 @@ def get_weather(location="Syracuse, NY"):
     else:
         return {"error": "Could not retrieve weather data."}
 
+def get_clothing_suggestions(weather_info):
+    """Function to call OpenAI's API for clothing suggestions based on the weather."""
+    prompt = (f"The current weather in {weather_info['location']} is {weather_info['temperature']}°C, "
+              f"with a 'feels like' temperature of {weather_info['feels_like']}°C. "
+              f"The humidity is {weather_info['humidity']}%. "
+              f"Based on this, what kind of clothing would you suggest for someone traveling today?")
+
+    response = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",  # Specify model as per new API
+        messages=[
+            {"role": "system", "content": "You are a helpful assistant that gives weather-based clothing advice in one line. Provide clothing suggestions and advice on whether it’s a good day for a picnic."},
+            {"role": "user", "content": prompt}
+        ],
+        max_tokens=100
+    )
+    # Extract the text from the completion response
+    return response.choices[0].message['content'].strip()
+
 def llm_tool(location):
-    """Function to call OpenAI's API to get weather suggestion."""
+    """Function to get weather details."""
     if not location:
         location = "Syracuse, NY"  # Default location
     
@@ -43,9 +61,25 @@ def llm_tool(location):
             f"Conditions: {weather_data['weather']}")
 
 # Streamlit UI
-st.title("Weather Suggestion Bot")
+st.title("Weather and Clothing Suggestion Bot")
+
+# Get user input for location
 user_input = st.text_input("Enter a city (leave blank for default - Syracuse, NY):")
 
-if st.button("Get Weather Suggestion"):
-    suggestion = llm_tool(user_input)
-    st.write(suggestion)
+# Create two buttons side by side
+col1, col2 = st.columns(2)
+
+with col1:
+    if st.button("Get Weather Suggestion"):
+        suggestion = llm_tool(user_input)
+        st.write(suggestion)
+
+with col2:
+    if st.button("Get Clothing Suggestion"):
+        weather_data = get_weather(user_input)
+        if 'error' not in weather_data:
+            clothing_suggestion = get_clothing_suggestions(weather_data)
+            st.write(f"Weather Info:\n{llm_tool(user_input)}")
+            st.write(f"\nClothing Suggestion: {clothing_suggestion}")
+        else:
+            st.write(f"Error: {weather_data['error']}")
