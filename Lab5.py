@@ -42,7 +42,7 @@ def get_clothing_suggestions(weather_info):
         max_tokens=100
     )
     # Extract the text from the completion response
-    return response.choices[0].message['content'].strip()
+    return response.choices[0].message.content.strip()
 
 def llm_tool(location):
     """Function to get weather details."""
@@ -77,7 +77,7 @@ with col1:
         st.write(suggestion)
 
 with col2:
-    if st.button("Get Clothing Suggestion", key = "key2"):
+    if st.button("Get Clothing Suggestion", key="key2"):
         weather_data = get_weather(user_input)
         if 'error' not in weather_data:
             clothing_suggestion = get_clothing_suggestions(weather_data)
