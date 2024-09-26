@@ -70,12 +70,12 @@ user_input = st.text_input("Enter a city (leave blank for default - Syracuse, NY
 col1, col2 = st.columns(2)
 
 with col1:
-    if st.button("Get Weather Suggestion"):
+    if st.button("Get Weather Suggestion", key="key1"):
         suggestion = llm_tool(user_input)
         st.write(suggestion)
 
 with col2:
-    if st.button("Get Clothing Suggestion"):
+    if st.button("Get Clothing Suggestion", key = "key2"):
         weather_data = get_weather(user_input)
         if 'error' not in weather_data:
             clothing_suggestion = get_clothing_suggestions(weather_data)
